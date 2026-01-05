@@ -1,35 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
-import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import './App.css'
+import BlogEditorPanel from './components/BlogEditorPanel'
+import BlogHeader from './components/BlogHeader'
+import BlogLibraryPanel from './components/BlogLibraryPanel'
 
-// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nitbackend.vercel.app/api'
 const api = axios.create({ baseURL: API_BASE })
-
-const quillModules = {
-  toolbar: [
-    [{ size: ['small', false, 'large', 'huge'] }],
-    ['bold', 'italic', 'underline'],
-    [{ color: [] }, { background: [] }],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    [{ indent: '-1' }, { indent: '+1' }],
-    ['clean'],
-  ],
-}
-
-const quillFormats = [
-  'size',
-  'bold',
-  'italic',
-  'underline',
-  'color',
-  'background',
-  'list',
-  'bullet',
-  'indent',
-]
 
 const isEmptyHtml = value => {
   if (!value) return true
@@ -67,8 +46,18 @@ function App() {
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState('')
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newSubcategoryName, setNewSubcategoryName] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const totalBlogs = useMemo(() => blogs.length, [blogs])
+  const pageSize = 3
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(blogs.length / pageSize)),
+    [blogs.length]
+  )
+  const pagedBlogs = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return blogs.slice(start, start + pageSize)
+  }, [blogs, currentPage])
   const selectedCategory = useMemo(
     () => categories.find(category => category._id === selectedCategoryId),
     [categories, selectedCategoryId]
@@ -118,6 +107,12 @@ function App() {
     loadBlogs()
     loadCategories()
   }, [])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
 
   const loadCategories = async () => {
     try {
@@ -300,7 +295,32 @@ function App() {
 
   const handleSearch = event => {
     event.preventDefault()
+    setCurrentPage(1)
     loadBlogs(searchQuery.trim())
+  }
+
+  const updateBlogCounts = (blogId, updates) => {
+    setBlogs(prev =>
+      prev.map(blog => (blog._id === blogId ? { ...blog, ...updates } : blog))
+    )
+  }
+
+  const handleLike = async blogId => {
+    try {
+      const { data: payload } = await api.post(`/blogs/${blogId}/like`)
+      updateBlogCounts(blogId, { likesCount: payload.likesCount })
+    } catch (error) {
+      setStatus({ type: 'error', message: 'Unable to update likes right now.' })
+    }
+  }
+
+  const handleShare = async blogId => {
+    try {
+      const { data: payload } = await api.post(`/blogs/${blogId}/share`)
+      updateBlogCounts(blogId, { sharesCount: payload.sharesCount })
+    } catch (error) {
+      setStatus({ type: 'error', message: 'Unable to update shares right now.' })
+    }
   }
 
   const handleCategorySelect = event => {
@@ -377,280 +397,54 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <div>
-          <p className="kicker">NIT Admin</p>
-          <h1>Blog Studio</h1>
-          <p className="subtitle">Curate stories, set the tone, and keep your blog feed fresh.</p>
-        </div>
-        <div className="stats">
-          <div>
-            <span>Total blogs</span>
-            <strong>{totalBlogs}</strong>
-          </div>
-          <div>
-            <span>Active mode</span>
-            <strong>{selectedId ? 'Editing' : 'Creating'}</strong>
-          </div>
-        </div>
-      </header>
+      <BlogHeader totalBlogs={totalBlogs} isEditing={Boolean(selectedId)} />
 
       <section className="dashboard">
-        <div className="panel list-panel">
-          <div className="panel-header">
-            <h2>Library</h2>
-            <form className="search" onSubmit={handleSearch}>
-              <input
-                type="text"
-                placeholder="Search blogs"
-                value={searchQuery}
-                onChange={event => setSearchQuery(event.target.value)}
-              />
-              <button type="submit" disabled={loading}>
-                Search
-              </button>
-            </form>
-          </div>
-
-          <div className="list">
-            {loading && <p className="hint">Loading...</p>}
-            {!loading && blogs.length === 0 && <p className="hint">No blogs found yet.</p>}
-            {blogs.map(blog => (
-              <article className="blog-card" key={blog._id}>
-                <div>
-                  <p className="tag">{blog.category || 'General'}</p>
-                  <h3>{blog.title}</h3>
-                  <p className="meta">
-                    {blog.writtenBy || 'Unknown'} • {new Date(blog.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="card-actions">
-                  <button type="button" onClick={() => selectBlog(blog)}>
-                    Edit
-                  </button>
-                  <button type="button" className="ghost" onClick={() => handleDelete(blog._id)}>
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-
-        <div className="panel form-panel">
-          <div className="panel-header">
-            <h2>{selectedId ? 'Edit blog' : 'Create blog'}</h2>
-            <button type="button" className="ghost" onClick={resetForm}>
-              Reset
-            </button>
-          </div>
-
-          <form className="blog-form" onSubmit={handleSubmit}>
-            {isSaving && (
-              <div className="loading-bar" role="status" aria-live="polite">
-                <span />
-              </div>
-            )}
-            <div className="grid">
-              <label>
-                Title
-                <input name="title" value={form.title} onChange={handleInputChange} required />
-              </label>
-              <label>
-                Written by
-                <input name="writtenBy" value={form.writtenBy} onChange={handleInputChange} required />
-              </label>
-              <label>
-                Category
-                <select value={selectedCategoryId} onChange={handleCategorySelect} required>
-                  <option value="">Select category</option>
-                  {categories.map(category => (
-                    <option key={category._id} value={category._id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Sub-category
-                <select value={selectedSubcategoryId} onChange={handleSubcategorySelect}>
-                  <option value="">Select subcategory</option>
-                  {subcategories.map(subcategory => (
-                    <option key={subcategory._id} value={subcategory._id}>
-                      {subcategory.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="category-actions">
-                <label>
-                  New category
-                  <input
-                    value={newCategoryName}
-                    onChange={event => setNewCategoryName(event.target.value)}
-                    placeholder="Add category"
-                  />
-                </label>
-                <button type="button" className="ghost" onClick={handleAddCategory} disabled={loading}>
-                  Add category
-                </button>
-              </div>
-              <div className="category-actions">
-                <label>
-                  New subcategory
-                  <input
-                    value={newSubcategoryName}
-                    onChange={event => setNewSubcategoryName(event.target.value)}
-                    placeholder="Add subcategory"
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="ghost"
-                  onClick={handleAddSubcategory}
-                  disabled={loading || !selectedCategoryId}
-                >
-                  Add subcategory
-                </button>
-              </div>
-              <label>
-                Cancer stage
-                <select name="cancerStage" value={form.cancerStage} onChange={handleInputChange}>
-                  <option value="ANY">ANY</option>
-                  <option value="IN TREATMENT">IN TREATMENT</option>
-                  <option value="NEWLY TREATMENT">NEWLY TREATMENT</option>
-                  <option value="POST TREATMENT">POST TREATMENT</option>
-                </select>
-              </label>
-              <label>
-                Metadata (comma separated)
-                <input name="metadata" value={form.metadata} onChange={handleInputChange} />
-              </label>
-              <label>
-                Video links (comma separated)
-                <input name="videoLinks" value={form.videoLinks} onChange={handleInputChange} />
-              </label>
-              <label className="checkbox">
-                <span>Spotlight</span>
-                <input
-                  type="checkbox"
-                  checked={form.spotlight}
-                  onChange={event =>
-                    setForm(prev => ({ ...prev, spotlight: event.target.checked }))
-                  }
-                />
-              </label>
-            </div>
-
-            <label>
-              Description
-              <ReactQuill
-                theme="snow"
-                value={form.description}
-                onChange={value => setForm(prev => ({ ...prev, description: value }))}
-                modules={quillModules}
-                formats={quillFormats}
-              />
-            </label>
-
-            <div className="grid">
-              <label>
-                Main image
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={event => handleFileChange('image', event.target.files?.[0] || null)}
-                />
-              </label>
-              <label>
-                Admin photo (optional)
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={event => handleFileChange('adminPhoto', event.target.files?.[0] || null)}
-                />
-              </label>
-              <label className="full">
-                Blog images (exactly two)
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={event => handleFileChange('blogImage', Array.from(event.target.files || []))}
-                />
-              </label>
-            </div>
-
-            <div className="admin-statement">
-              <h3>Admin statement</h3>
-              <div className="grid">
-                <label>
-                  Quotation
-                  <input
-                    name="adminQuotation"
-                    value={form.adminQuotation}
-                    onChange={handleInputChange}
-                  />
-                </label>
-                <label>
-                  Name
-                  <input name="adminName" value={form.adminName} onChange={handleInputChange} />
-                </label>
-                <label>
-                  Designation
-                  <input
-                    name="adminDesignation"
-                    value={form.adminDesignation}
-                    onChange={handleInputChange}
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div className="faqs">
-              <div className="panel-header">
-                <h3>FAQs</h3>
-                <button type="button" className="ghost" onClick={addFaq}>
-                  Add FAQ
-                </button>
-              </div>
-              {faqs.map((faq, index) => (
-                <div className="faq-item" key={`faq-${index}`}>
-                  <label>
-                    Question
-                    <input
-                      value={faq.question}
-                      onChange={event => handleFaqChange(index, 'question', event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Answer
-                    <input
-                      value={faq.answer}
-                      onChange={event => handleFaqChange(index, 'answer', event.target.value)}
-                    />
-                  </label>
-                  {faqs.length > 1 && (
-                    <button type="button" className="ghost" onClick={() => removeFaq(index)}>
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {status.message && <p className={`status ${status.type}`}>{status.message}</p>}
-
-            <div className="form-actions">
-              <button type="submit" disabled={loading}>
-                {selectedId ? 'Update blog' : 'Publish blog'}
-              </button>
-              <button type="button" className="ghost" onClick={resetForm} disabled={loading}>
-                Clear
-              </button>
-            </div>
-          </form>
-        </div>
+        <BlogLibraryPanel
+          loading={loading}
+          blogs={pagedBlogs}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          onSearch={handleSearch}
+          onSelectBlog={selectBlog}
+          onDeleteBlog={handleDelete}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          onLikeBlog={handleLike}
+          onShareBlog={handleShare}
+        />
+        <BlogEditorPanel
+          selectedId={selectedId}
+          onReset={resetForm}
+          onSubmit={handleSubmit}
+          isSaving={isSaving}
+          form={form}
+          onInputChange={handleInputChange}
+          onSpotlightChange={event =>
+            setForm(prev => ({ ...prev, spotlight: event.target.checked }))
+          }
+          onDescriptionChange={value => setForm(prev => ({ ...prev, description: value }))}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          subcategories={subcategories}
+          selectedSubcategoryId={selectedSubcategoryId}
+          onCategorySelect={handleCategorySelect}
+          onSubcategorySelect={handleSubcategorySelect}
+          newCategoryName={newCategoryName}
+          onNewCategoryNameChange={setNewCategoryName}
+          onAddCategory={handleAddCategory}
+          newSubcategoryName={newSubcategoryName}
+          onNewSubcategoryNameChange={setNewSubcategoryName}
+          onAddSubcategory={handleAddSubcategory}
+          onFileChange={handleFileChange}
+          faqs={faqs}
+          onFaqChange={handleFaqChange}
+          onAddFaq={addFaq}
+          onRemoveFaq={removeFaq}
+          status={status}
+          loading={loading}
+        />
       </section>
     </div>
   )
