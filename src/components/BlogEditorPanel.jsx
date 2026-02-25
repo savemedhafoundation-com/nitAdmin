@@ -1,27 +1,5 @@
-import ReactQuill from 'react-quill'
-
-const quillModules = {
-  toolbar: [
-    [{ size: ['small', false, 'large', 'huge'] }],
-    ['bold', 'italic', 'underline'],
-    [{ color: [] }, { background: [] }],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    [{ indent: '-1' }, { indent: '+1' }],
-    ['clean'],
-  ],
-}
-
-const quillFormats = [
-  'size',
-  'bold',
-  'italic',
-  'underline',
-  'color',
-  'background',
-  'list',
-  'bullet',
-  'indent',
-]
+import ReactQuill from 'react-quill-new'
+import { quillFormats, quillModules } from '../utils/quillConfig'
 
 const BlogEditorPanel = ({
   selectedId,
@@ -70,15 +48,21 @@ const BlogEditorPanel = ({
         <div className="grid">
           <label>
             Title
-            <input name="title" value={form.title} onChange={onInputChange} required />
+            <input name="title" title="Title" value={form.title} onChange={onInputChange} required />
           </label>
           <label>
             Written by
-            <input name="writtenBy" value={form.writtenBy} onChange={onInputChange} required />
+            <input
+              name="writtenBy"
+              title="Written by"
+              value={form.writtenBy}
+              onChange={onInputChange}
+              required
+            />
           </label>
           <label>
             Category
-            <select value={selectedCategoryId} onChange={onCategorySelect} required>
+            <select title="Category" value={selectedCategoryId} onChange={onCategorySelect} required>
               <option value="">Select category</option>
               {categories.map(category => (
                 <option key={category._id} value={category._id}>
@@ -89,7 +73,7 @@ const BlogEditorPanel = ({
           </label>
           <label>
             Sub-category
-            <select value={selectedSubcategoryId} onChange={onSubcategorySelect}>
+            <select title="Sub-category" value={selectedSubcategoryId} onChange={onSubcategorySelect}>
               <option value="">Select subcategory</option>
               {subcategories.map(subcategory => (
                 <option key={subcategory._id} value={subcategory._id}>
@@ -102,6 +86,7 @@ const BlogEditorPanel = ({
             <label>
               New category
               <input
+                title="New category"
                 value={newCategoryName}
                 onChange={event => onNewCategoryNameChange(event.target.value)}
                 placeholder="Add category"
@@ -115,6 +100,7 @@ const BlogEditorPanel = ({
             <label>
               New subcategory
               <input
+                title="New subcategory"
                 value={newSubcategoryName}
                 onChange={event => onNewSubcategoryNameChange(event.target.value)}
                 placeholder="Add subcategory"
@@ -131,7 +117,12 @@ const BlogEditorPanel = ({
           </div>
           <label>
             Cancer stage
-            <select name="cancerStage" value={form.cancerStage} onChange={onInputChange}>
+            <select
+              name="cancerStage"
+              title="Cancer stage"
+              value={form.cancerStage}
+              onChange={onInputChange}
+            >
               <option value="ANY">ANY</option>
               <option value="IN TREATMENT">IN TREATMENT</option>
               <option value="NEWLY TREATMENT">NEWLY TREATMENT</option>
@@ -140,15 +131,20 @@ const BlogEditorPanel = ({
           </label>
           <label>
             Metadata (comma separated)
-            <input name="metadata" value={form.metadata} onChange={onInputChange} />
+            <input name="metadata" title="Metadata" value={form.metadata} onChange={onInputChange} />
           </label>
           <label>
             Video links (comma separated)
-            <input name="videoLinks" value={form.videoLinks} onChange={onInputChange} />
+            <input
+              name="videoLinks"
+              title="Video links"
+              value={form.videoLinks}
+              onChange={onInputChange}
+            />
           </label>
           <label className="checkbox">
             <span>Spotlight</span>
-            <input type="checkbox" checked={form.spotlight} onChange={onSpotlightChange} />
+            <input type="checkbox" title="Spotlight" checked={form.spotlight} onChange={onSpotlightChange} />
           </label>
         </div>
 
@@ -158,6 +154,7 @@ const BlogEditorPanel = ({
             theme="snow"
             value={form.description}
             onChange={onDescriptionChange}
+            title="Description"
             modules={quillModules}
             formats={quillFormats}
           />
@@ -168,6 +165,7 @@ const BlogEditorPanel = ({
             Main image
             <input
               type="file"
+              title="Main image"
               accept="image/*"
               onChange={event => onFileChange('image', event.target.files?.[0] || null)}
             />
@@ -176,6 +174,7 @@ const BlogEditorPanel = ({
             Admin photo (optional)
             <input
               type="file"
+              title="Admin photo"
               accept="image/*"
               onChange={event => onFileChange('adminPhoto', event.target.files?.[0] || null)}
             />
@@ -184,6 +183,7 @@ const BlogEditorPanel = ({
             Blog images (exactly two)
             <input
               type="file"
+              title="Blog images"
               accept="image/*"
               multiple
               onChange={event => onFileChange('blogImage', Array.from(event.target.files || []))}
@@ -196,16 +196,22 @@ const BlogEditorPanel = ({
           <div className="grid">
             <label>
               Quotation
-              <input name="adminQuotation" value={form.adminQuotation} onChange={onInputChange} />
+              <input
+                name="adminQuotation"
+                title="Admin quotation"
+                value={form.adminQuotation}
+                onChange={onInputChange}
+              />
             </label>
             <label>
               Name
-              <input name="adminName" value={form.adminName} onChange={onInputChange} />
+              <input name="adminName" title="Admin name" value={form.adminName} onChange={onInputChange} />
             </label>
             <label>
               Designation
               <input
                 name="adminDesignation"
+                title="Admin designation"
                 value={form.adminDesignation}
                 onChange={onInputChange}
               />
@@ -225,6 +231,7 @@ const BlogEditorPanel = ({
               <label>
                 Question
                 <input
+                  title="FAQ question"
                   value={faq.question}
                   onChange={event => onFaqChange(index, 'question', event.target.value)}
                 />
@@ -232,6 +239,7 @@ const BlogEditorPanel = ({
               <label>
                 Answer
                 <input
+                  title="FAQ answer"
                   value={faq.answer}
                   onChange={event => onFaqChange(index, 'answer', event.target.value)}
                 />

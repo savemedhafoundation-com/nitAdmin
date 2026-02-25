@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
-import 'react-quill/dist/quill.snow.css'
+import 'react-quill-new/dist/quill.snow.css'
+import 'quill-table-up/index.css'
+import 'quill-table-up/table-creator.css'
 import './App.css'
 import BlogEditorPanel from './components/BlogEditorPanel'
 import BlogHeader from './components/BlogHeader'
 import BlogLibraryPanel from './components/BlogLibraryPanel'
+import CaseStudyFormPanel from './components/CaseStudyFormPanel'
+import AdminSidebar from './components/AdminSidebar'
 
 // const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nitbackend.vercel.app/api'
@@ -31,7 +35,15 @@ const emptyForm = {
   adminDesignation: '',
 }
 
+const getViewFromHash = () => {
+  if (typeof window === 'undefined') return 'blogs'
+  const hash = window.location.hash.replace('#', '').trim().toLowerCase()
+  return hash === 'case-studies' ? 'case-studies' : 'blogs'
+}
+
 function App() {
+  const [activeView, setActiveView] = useState(getViewFromHash)
+  const [isCaseStudyDialogOpen, setIsCaseStudyDialogOpen] = useState(false)
   const [blogs, setBlogs] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [faqs, setFaqs] = useState([{ question: '', answer: '' }])
@@ -107,6 +119,43 @@ function App() {
     loadBlogs()
     loadCategories()
   }, [])
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setActiveView(getViewFromHash())
+    }
+
+    if (!window.location.hash) {
+      window.location.hash = '#blogs'
+    }
+
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  useEffect(() => {
+    if (!isCaseStudyDialogOpen || activeView !== 'case-studies') return undefined
+
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') {
+        setIsCaseStudyDialogOpen(false)
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isCaseStudyDialogOpen, activeView])
+
+  useEffect(() => {
+    if (activeView !== 'case-studies' && isCaseStudyDialogOpen) {
+      setIsCaseStudyDialogOpen(false)
+    }
+  }, [activeView, isCaseStudyDialogOpen])
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -395,57 +444,125 @@ function App() {
     }
   }
 
-  return (
-    <div className="app">
-      <BlogHeader totalBlogs={totalBlogs} isEditing={Boolean(selectedId)} />
+  const handleNavigate = view => {
+    const nextView = view === 'case-studies' ? 'case-studies' : 'blogs'
+    setActiveView(nextView)
+    const nextHash = nextView === 'case-studies' ? '#case-studies' : '#blogs'
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash
+    }
+  }
 
-      <section className="dashboard">
-        <BlogLibraryPanel
-          loading={loading}
-          blogs={pagedBlogs}
-          searchQuery={searchQuery}
-          onSearchQueryChange={setSearchQuery}
-          onSearch={handleSearch}
-          onSelectBlog={selectBlog}
-          onDeleteBlog={handleDelete}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          onLikeBlog={handleLike}
-          onShareBlog={handleShare}
-        />
-        <BlogEditorPanel
-          selectedId={selectedId}
-          onReset={resetForm}
-          onSubmit={handleSubmit}
-          isSaving={isSaving}
-          form={form}
-          onInputChange={handleInputChange}
-          onSpotlightChange={event =>
-            setForm(prev => ({ ...prev, spotlight: event.target.checked }))
-          }
-          onDescriptionChange={value => setForm(prev => ({ ...prev, description: value }))}
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          subcategories={subcategories}
-          selectedSubcategoryId={selectedSubcategoryId}
-          onCategorySelect={handleCategorySelect}
-          onSubcategorySelect={handleSubcategorySelect}
-          newCategoryName={newCategoryName}
-          onNewCategoryNameChange={setNewCategoryName}
-          onAddCategory={handleAddCategory}
-          newSubcategoryName={newSubcategoryName}
-          onNewSubcategoryNameChange={setNewSubcategoryName}
-          onAddSubcategory={handleAddSubcategory}
-          onFileChange={handleFileChange}
-          faqs={faqs}
-          onFaqChange={handleFaqChange}
-          onAddFaq={addFaq}
-          onRemoveFaq={removeFaq}
-          status={status}
-          loading={loading}
-        />
-      </section>
+  const openCaseStudyDialog = () => {
+    setIsCaseStudyDialogOpen(true)
+  }
+
+  const closeCaseStudyDialog = () => {
+    setIsCaseStudyDialogOpen(false)
+  }
+
+  return (
+    <div className="app-shell">
+      <AdminSidebar activeView={activeView} onNavigate={handleNavigate} />
+
+      <main className="app">
+        {activeView === 'blogs' && (
+          <>
+            <BlogHeader totalBlogs={totalBlogs} isEditing={Boolean(selectedId)} />
+
+            <section className="dashboard">
+              <BlogLibraryPanel
+                loading={loading}
+                blogs={pagedBlogs}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
+                onSearch={handleSearch}
+                onSelectBlog={selectBlog}
+                onDeleteBlog={handleDelete}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                onLikeBlog={handleLike}
+                onShareBlog={handleShare}
+              />
+              <BlogEditorPanel
+                selectedId={selectedId}
+                onReset={resetForm}
+                onSubmit={handleSubmit}
+                isSaving={isSaving}
+                form={form}
+                onInputChange={handleInputChange}
+                onSpotlightChange={event =>
+                  setForm(prev => ({ ...prev, spotlight: event.target.checked }))
+                }
+                onDescriptionChange={value => setForm(prev => ({ ...prev, description: value }))}
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                subcategories={subcategories}
+                selectedSubcategoryId={selectedSubcategoryId}
+                onCategorySelect={handleCategorySelect}
+                onSubcategorySelect={handleSubcategorySelect}
+                newCategoryName={newCategoryName}
+                onNewCategoryNameChange={setNewCategoryName}
+                onAddCategory={handleAddCategory}
+                newSubcategoryName={newSubcategoryName}
+                onNewSubcategoryNameChange={setNewSubcategoryName}
+                onAddSubcategory={handleAddSubcategory}
+                onFileChange={handleFileChange}
+                faqs={faqs}
+                onFaqChange={handleFaqChange}
+                onAddFaq={addFaq}
+                onRemoveFaq={removeFaq}
+                status={status}
+                loading={loading}
+              />
+            </section>
+          </>
+        )}
+
+        {activeView === 'case-studies' && (
+          <section className="case-study-section">
+            <div className="panel case-study-intro">
+              <p className="kicker">NIT Research</p>
+              <h2>Case Study Studio</h2>
+              <p className="subtitle">
+                Create and publish case studies with rich text, tables, graphs, and cloud image uploads.
+              </p>
+              <div className="case-study-intro-actions">
+                <button type="button" title="Add Case Study" onClick={openCaseStudyDialog}>
+                  Add Case Study
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+
+      {activeView === 'case-studies' && isCaseStudyDialogOpen && (
+        <div
+          className="case-study-dialog-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add Case Study"
+          onClick={event => {
+            if (event.target === event.currentTarget) {
+              closeCaseStudyDialog()
+            }
+          }}
+        >
+          <div className="case-study-dialog">
+            <div className="case-study-dialog-header">
+              <h2>Add Case Study</h2>
+              <button type="button" className="ghost" title="Close" onClick={closeCaseStudyDialog}>
+                Close
+              </button>
+            </div>
+            <div className="case-study-dialog-body">
+              <CaseStudyFormPanel api={api} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

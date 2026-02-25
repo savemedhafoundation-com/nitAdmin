@@ -40,6 +40,7 @@ const BlogLibraryPanel = ({
           <input
             type="text"
             placeholder="Search blogs"
+            title="Search blogs"
             value={searchQuery}
             onChange={event => onSearchQueryChange(event.target.value)}
           />
