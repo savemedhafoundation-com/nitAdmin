@@ -148,8 +148,10 @@ const BlogEditorPanel = ({
           </label>
         </div>
 
-        <label>
-          Description  (try to place "AdminStatement", "youtubevideo", "image1" in the description to get proper placing)
+        <div className="field-block">
+          <span className="field-title">
+            Description  (try to place "AdminStatement", "youtubevideo", "image1" in the description to get proper placing)
+          </span>
           <ReactQuill
             theme="snow"
             value={form.description}
@@ -158,7 +160,7 @@ const BlogEditorPanel = ({
             modules={quillModules}
             formats={quillFormats}
           />
-        </label>
+        </div>
 
         <div className="grid">
           <label>

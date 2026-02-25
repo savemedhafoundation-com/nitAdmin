@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ReactQuill from 'react-quill-new'
 import {
   quillFormats,
@@ -103,6 +103,87 @@ const toNumericIfPossible = value => {
   return Number.isFinite(numberValue) ? numberValue : trimmed
 }
 
+const escapeHtml = value => {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+const tablesToHtml = tables => {
+  if (!Array.isArray(tables) || tables.length === 0) return ''
+
+  return tables
+    .map(table => {
+      const headers = Array.isArray(table.headers) ? table.headers : []
+      const rows = Array.isArray(table.rows) ? table.rows : []
+      const title = table.title ? `<p><strong>${escapeHtml(table.title)}</strong></p>` : ''
+
+      const headerHtml =
+        headers.length > 0
+          ? `<tr>${headers.map(header => `<th>${escapeHtml(header)}</th>`).join('')}</tr>`
+          : ''
+
+      const rowsHtml = rows
+        .map(row => {
+          const cells = Array.isArray(row) ? row : []
+          return `<tr>${cells.map(cell => `<td>${escapeHtml(cell)}</td>`).join('')}</tr>`
+        })
+        .join('')
+
+      return `${title}<table><tbody>${headerHtml}${rowsHtml}</tbody></table>`
+    })
+    .join('<p><br/></p>')
+}
+
+const graphsToTables = graphs => {
+  if (!Array.isArray(graphs)) return []
+
+  return graphs
+    .map(graph => {
+      const datasets = Array.isArray(graph.datasets) ? graph.datasets : []
+      const labels = Array.isArray(graph.labels) ? graph.labels : []
+      if (datasets.length === 0) return null
+
+      const headers = ['Label', ...datasets.map(dataset => dataset.label || 'Series')]
+      const maxRows = Math.max(labels.length, ...datasets.map(dataset => dataset.data?.length || 0))
+
+      const rows = Array.from({ length: maxRows }, (_, rowIndex) => {
+        const row = [labels[rowIndex] ?? '']
+        datasets.forEach(dataset => {
+          row.push(dataset?.data?.[rowIndex] ?? '')
+        })
+        return row
+      })
+
+      return {
+        title: graph.title || '',
+        headers,
+        rows,
+      }
+    })
+    .filter(Boolean)
+}
+
+const imagesToTables = images => {
+  if (!Array.isArray(images) || images.length === 0) return []
+
+  return [
+    {
+      title: 'Result Images Metadata',
+      headers: ['url', 'publicId', 'caption', 'altText'],
+      rows: images.map(image => [
+        image?.url || '',
+        image?.publicId || '',
+        image?.caption || '',
+        image?.altText || '',
+      ]),
+    },
+  ]
+}
+
 const extractTablesFromHtml = html => {
   if (isEmptyHtml(html)) return []
 
@@ -190,7 +271,46 @@ const mapTablesToImageMetadata = tables => {
   })
 }
 
-const CaseStudyFormPanel = ({ api }) => {
+const buildEditorStateFromCaseStudy = caseStudy => ({
+  title: caseStudy?.title || '',
+  abstract: caseStudy?.abstract || '',
+  introduction: caseStudy?.introduction || '',
+  keywords: caseStudy?.keywords || '',
+  reviewOfLiterature: caseStudy?.reviewOfLiterature || '',
+  researchGap: caseStudy?.researchGap || '',
+  researchObjectives: caseStudy?.researchObjectives || '',
+  researchQuestions: caseStudy?.researchQuestions || '',
+  researchHypothesis: caseStudy?.researchHypothesis || '',
+  caseDescription: caseStudy?.caseDescription || '',
+  methodologyContent: caseStudy?.methodology?.content || '',
+  observationContent: caseStudy?.observation?.content || '',
+  dataAnalysisContent: caseStudy?.dataAnalysis?.content || '',
+  resultContent: caseStudy?.result?.content || '',
+  ethicalConsideration: caseStudy?.ethicalConsideration || '',
+  discussion: caseStudy?.discussion || '',
+  expectedOutcomes: caseStudy?.expectedOutcomes || '',
+  scientificSignificance: caseStudy?.scientificSignificance || '',
+  limitation: caseStudy?.limitation || '',
+  placeOfResearch: caseStudy?.placeOfResearch || '',
+  conclusion: caseStudy?.conclusion || '',
+})
+
+const buildStructuredStateFromCaseStudy = caseStudy => ({
+  methodologyTables: tablesToHtml(caseStudy?.methodology?.tables || []),
+  observationTables: tablesToHtml(caseStudy?.observation?.tables || []),
+  dataAnalysisTables: tablesToHtml(caseStudy?.dataAnalysis?.tables || []),
+  dataAnalysisGraphs: tablesToHtml(graphsToTables(caseStudy?.dataAnalysis?.graphs || [])),
+  resultTables: tablesToHtml(caseStudy?.result?.tables || []),
+  resultImagesData: tablesToHtml(imagesToTables(caseStudy?.result?.images || [])),
+})
+
+const CaseStudyFormPanel = ({
+  api,
+  mode = 'create',
+  initialData = null,
+  onSuccess,
+  onCancel,
+}) => {
   const [editorData, setEditorData] = useState(initialEditorState)
   const [structuredData, setStructuredData] = useState(initialStructuredState)
   const [resultImages, setResultImages] = useState([])
@@ -198,7 +318,25 @@ const CaseStudyFormPanel = ({ api }) => {
   const [status, setStatus] = useState({ type: '', message: '' })
   const [isSaving, setIsSaving] = useState(false)
 
+  const isEditMode = mode === 'edit' && Boolean(initialData?._id)
   const requiredFields = useMemo(() => editorFields.filter(field => field.required), [])
+
+  useEffect(() => {
+    if (isEditMode) {
+      setEditorData(buildEditorStateFromCaseStudy(initialData))
+      setStructuredData(buildStructuredStateFromCaseStudy(initialData))
+      setPublishStatus(initialData?.status || 'draft')
+      setResultImages([])
+      setStatus({ type: '', message: '' })
+      return
+    }
+
+    setEditorData(initialEditorState)
+    setStructuredData(initialStructuredState)
+    setPublishStatus('draft')
+    setResultImages([])
+    setStatus({ type: '', message: '' })
+  }, [isEditMode, initialData])
 
   const handleEditorChange = (key, value) => {
     setEditorData(prev => ({ ...prev, [key]: value }))
@@ -208,11 +346,36 @@ const CaseStudyFormPanel = ({ api }) => {
     setStructuredData(prev => ({ ...prev, [key]: value }))
   }
 
+  const handleResultImagesChange = event => {
+    const newFiles = Array.from(event.target.files || [])
+    if (newFiles.length === 0) return
+
+    setResultImages(prev => {
+      const existingKeys = new Set(prev.map(file => `${file.name}-${file.size}-${file.lastModified}`))
+      const uniqueNewFiles = newFiles.filter(
+        file => !existingKeys.has(`${file.name}-${file.size}-${file.lastModified}`)
+      )
+      return [...prev, ...uniqueNewFiles]
+    })
+
+    event.target.value = ''
+  }
+
   const resetForm = () => {
+    if (isEditMode) {
+      setEditorData(buildEditorStateFromCaseStudy(initialData))
+      setStructuredData(buildStructuredStateFromCaseStudy(initialData))
+      setPublishStatus(initialData?.status || 'draft')
+      setResultImages([])
+      setStatus({ type: '', message: '' })
+      return
+    }
+
     setEditorData(initialEditorState)
     setStructuredData(initialStructuredState)
     setResultImages([])
     setPublishStatus('draft')
+    setStatus({ type: '', message: '' })
   }
 
   const handleSubmit = async event => {
@@ -261,16 +424,31 @@ const CaseStudyFormPanel = ({ api }) => {
 
       resultImages.forEach(file => formData.append('resultImages', file))
 
-      await api.post('/case-studies', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = isEditMode
+        ? await api.put(`/case-studies/${initialData._id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          })
+        : await api.post('/case-studies', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          })
+
+      setStatus({
+        type: 'success',
+        message: isEditMode ? 'Case study updated successfully.' : 'Case study created successfully.',
       })
 
-      setStatus({ type: 'success', message: 'Case study created successfully.' })
-      resetForm()
+      onSuccess?.(response.data)
+
+      if (!isEditMode) {
+        setEditorData(initialEditorState)
+        setStructuredData(initialStructuredState)
+        setResultImages([])
+        setPublishStatus('draft')
+      }
     } catch (error) {
       setStatus({
         type: 'error',
-        message: error.response?.data?.message || error.message || 'Unable to create case study.',
+        message: error.response?.data?.message || error.message || 'Unable to save case study.',
       })
     } finally {
       setIsSaving(false)
@@ -280,7 +458,7 @@ const CaseStudyFormPanel = ({ api }) => {
   return (
     <div className="panel case-study-panel">
       <div className="panel-header">
-        <h2>Case Study Form</h2>
+        <h2>{isEditMode ? 'Edit Case Study' : 'Case Study Form'}</h2>
         <button type="button" className="ghost" onClick={resetForm}>
           Reset
         </button>
@@ -295,8 +473,8 @@ const CaseStudyFormPanel = ({ api }) => {
 
         <div className="case-study-grid">
           {editorFields.map(field => (
-            <label key={field.key} className={field.key === 'title' ? 'full' : ''}>
-              {field.label}
+            <div key={field.key} className={`field-block ${field.key === 'title' ? 'full' : ''}`}>
+              <span className="field-title">{field.label}</span>
               <span className="field-schema">{field.schemaPath}</span>
               <ReactQuill
                 theme="snow"
@@ -306,15 +484,14 @@ const CaseStudyFormPanel = ({ api }) => {
                 modules={quillModules}
                 formats={quillFormats}
               />
-            </label>
+            </div>
           ))}
         </div>
 
         <div className="case-study-json-grid">
           {structuredArrayFields.map(field => (
-            <label key={field.key}>
-              {field.label}
-              <span className="field-schema">{field.schemaPath}</span>
+            <div key={field.key} className="field-block structured-field">
+              <span className="field-title">{field.label}</span>
               <span className="field-note">{field.note}</span>
               <ReactQuill
                 theme="snow"
@@ -324,19 +501,20 @@ const CaseStudyFormPanel = ({ api }) => {
                 modules={quillTableOnlyModules}
                 formats={quillTableOnlyFormats}
               />
-            </label>
+            </div>
           ))}
 
           <label>
             Result Images
-            <span className="field-schema">result.images (upload files)</span>
+            <span className="field-schema">result images (upload files)</span>
             <input
               type="file"
               title="Result Images Upload (result.images)"
               accept="image/*"
               multiple
-              onChange={event => setResultImages(Array.from(event.target.files || []))}
+              onChange={handleResultImagesChange}
             />
+            <span className="field-note">Selected images: {resultImages.length}</span>
           </label>
 
           <label>
@@ -357,11 +535,16 @@ const CaseStudyFormPanel = ({ api }) => {
 
         <div className="form-actions">
           <button type="submit" disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Create case study'}
+            {isSaving ? 'Saving...' : isEditMode ? 'Update case study' : 'Create case study'}
           </button>
           <button type="button" className="ghost" onClick={resetForm} disabled={isSaving}>
             Clear
           </button>
+          {typeof onCancel === 'function' && (
+            <button type="button" className="ghost" onClick={onCancel} disabled={isSaving}>
+              Cancel
+            </button>
+          )}
         </div>
       </form>
     </div>

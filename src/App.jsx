@@ -8,6 +8,7 @@ import BlogEditorPanel from './components/BlogEditorPanel'
 import BlogHeader from './components/BlogHeader'
 import BlogLibraryPanel from './components/BlogLibraryPanel'
 import CaseStudyFormPanel from './components/CaseStudyFormPanel'
+import CaseStudyLibraryPanel from './components/CaseStudyLibraryPanel'
 import AdminSidebar from './components/AdminSidebar'
 
 // const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
@@ -44,6 +45,10 @@ const getViewFromHash = () => {
 function App() {
   const [activeView, setActiveView] = useState(getViewFromHash)
   const [isCaseStudyDialogOpen, setIsCaseStudyDialogOpen] = useState(false)
+  const [caseStudies, setCaseStudies] = useState([])
+  const [caseStudiesLoading, setCaseStudiesLoading] = useState(false)
+  const [caseStudyStatus, setCaseStudyStatus] = useState({ type: '', message: '' })
+  const [selectedCaseStudy, setSelectedCaseStudy] = useState(null)
   const [blogs, setBlogs] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [faqs, setFaqs] = useState([{ question: '', answer: '' }])
@@ -94,6 +99,12 @@ function App() {
   }
 
   const normalizeCategoryList = payload => {
+    if (payload && Array.isArray(payload.data)) return payload.data
+    return []
+  }
+
+  const normalizeCaseStudyList = payload => {
+    if (Array.isArray(payload)) return payload
     if (payload && Array.isArray(payload.data)) return payload.data
     return []
   }
@@ -158,6 +169,12 @@ function App() {
   }, [activeView, isCaseStudyDialogOpen])
 
   useEffect(() => {
+    if (activeView === 'case-studies') {
+      loadCaseStudies()
+    }
+  }, [activeView])
+
+  useEffect(() => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages)
     }
@@ -169,6 +186,21 @@ function App() {
       setCategories(normalizeCategoryList(payload))
     } catch (error) {
       setStatus({ type: 'error', message: 'Unable to load categories right now.' })
+    }
+  }
+
+  const loadCaseStudies = async () => {
+    setCaseStudiesLoading(true)
+    try {
+      const { data: payload } = await api.get('/case-studies?limit=100')
+      setCaseStudies(normalizeCaseStudyList(payload))
+    } catch (error) {
+      setCaseStudyStatus({
+        type: 'error',
+        message: error.response?.data?.message || 'Unable to load case studies right now.',
+      })
+    } finally {
+      setCaseStudiesLoading(false)
     }
   }
 
@@ -454,11 +486,50 @@ function App() {
   }
 
   const openCaseStudyDialog = () => {
+    setSelectedCaseStudy(null)
+    setCaseStudyStatus({ type: '', message: '' })
     setIsCaseStudyDialogOpen(true)
   }
 
   const closeCaseStudyDialog = () => {
     setIsCaseStudyDialogOpen(false)
+    setSelectedCaseStudy(null)
+  }
+
+  const handleEditCaseStudy = caseStudy => {
+    setSelectedCaseStudy(caseStudy)
+    setCaseStudyStatus({ type: '', message: '' })
+    setIsCaseStudyDialogOpen(true)
+  }
+
+  const handleDeleteCaseStudy = async caseStudy => {
+    if (!caseStudy?._id) return
+    const confirmed = window.confirm('Are you sure you want to delete this case study?')
+    if (!confirmed) return
+
+    setCaseStudiesLoading(true)
+    try {
+      await api.delete(`/case-studies/${caseStudy._id}`)
+      setCaseStudyStatus({ type: 'success', message: 'Case study deleted.' })
+      await loadCaseStudies()
+    } catch (error) {
+      setCaseStudyStatus({
+        type: 'error',
+        message: error.response?.data?.message || 'Unable to delete case study right now.',
+      })
+    } finally {
+      setCaseStudiesLoading(false)
+    }
+  }
+
+  const handleCaseStudySaveSuccess = async () => {
+    const wasEdit = Boolean(selectedCaseStudy?._id)
+    closeCaseStudyDialog()
+    setCaseStudyStatus({
+      type: 'success',
+      message: wasEdit ? 'Case study updated.' : 'Case study created.',
+    })
+    await loadCaseStudies()
   }
 
   return (
@@ -533,7 +604,17 @@ function App() {
                   Add Case Study
                 </button>
               </div>
+              {caseStudyStatus.message && (
+                <p className={`status ${caseStudyStatus.type}`}>{caseStudyStatus.message}</p>
+              )}
             </div>
+
+            <CaseStudyLibraryPanel
+              loading={caseStudiesLoading}
+              caseStudies={caseStudies}
+              onEdit={handleEditCaseStudy}
+              onDelete={handleDeleteCaseStudy}
+            />
           </section>
         )}
       </main>
@@ -543,7 +624,7 @@ function App() {
           className="case-study-dialog-overlay"
           role="dialog"
           aria-modal="true"
-          aria-label="Add Case Study"
+          aria-label={selectedCaseStudy ? 'Edit Case Study' : 'Add Case Study'}
           onClick={event => {
             if (event.target === event.currentTarget) {
               closeCaseStudyDialog()
@@ -552,13 +633,19 @@ function App() {
         >
           <div className="case-study-dialog">
             <div className="case-study-dialog-header">
-              <h2>Add Case Study</h2>
+              <h2>{selectedCaseStudy ? 'Edit Case Study' : 'Add Case Study'}</h2>
               <button type="button" className="ghost" title="Close" onClick={closeCaseStudyDialog}>
                 Close
               </button>
             </div>
             <div className="case-study-dialog-body">
-              <CaseStudyFormPanel api={api} />
+              <CaseStudyFormPanel
+                api={api}
+                mode={selectedCaseStudy ? 'edit' : 'create'}
+                initialData={selectedCaseStudy}
+                onSuccess={handleCaseStudySaveSuccess}
+                onCancel={closeCaseStudyDialog}
+              />
             </div>
           </div>
         </div>
