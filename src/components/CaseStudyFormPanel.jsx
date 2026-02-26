@@ -14,27 +14,27 @@ const isEmptyHtml = value => {
 }
 
 const editorFields = [
-  { key: 'title', label: 'Title', schemaPath: 'title', required: true },
-  { key: 'abstract', label: 'Abstract', schemaPath: 'abstract' },
-  { key: 'introduction', label: 'Introduction', schemaPath: 'introduction' },
-  { key: 'keywords', label: 'Keywords', schemaPath: 'keywords' },
-  { key: 'reviewOfLiterature', label: 'Review of Literature', schemaPath: 'reviewOfLiterature' },
-  { key: 'researchGap', label: 'Research Gap', schemaPath: 'researchGap' },
-  { key: 'researchObjectives', label: 'Research Objectives', schemaPath: 'researchObjectives' },
-  { key: 'researchQuestions', label: 'Research Questions', schemaPath: 'researchQuestions' },
-  { key: 'researchHypothesis', label: 'Research Hypothesis', schemaPath: 'researchHypothesis' },
-  { key: 'caseDescription', label: 'Case Description', schemaPath: 'caseDescription' },
-  { key: 'methodologyContent', label: 'Methodology', schemaPath: 'methodology.content' },
-  { key: 'observationContent', label: 'Observation', schemaPath: 'observation.content' },
-  { key: 'dataAnalysisContent', label: 'Data Analysis', schemaPath: 'dataAnalysis.content' },
-  { key: 'resultContent', label: 'Result', schemaPath: 'result.content' },
-  { key: 'ethicalConsideration', label: 'Ethical Consideration', schemaPath: 'ethicalConsideration' },
-  { key: 'discussion', label: 'Discussion', schemaPath: 'discussion' },
-  { key: 'expectedOutcomes', label: 'Expected Outcomes', schemaPath: 'expectedOutcomes' },
-  { key: 'scientificSignificance', label: 'Scientific Significance', schemaPath: 'scientificSignificance' },
-  { key: 'limitation', label: 'Limitation', schemaPath: 'limitation' },
-  { key: 'placeOfResearch', label: 'Place of Research', schemaPath: 'placeOfResearch' },
-  { key: 'conclusion', label: 'Conclusion', schemaPath: 'conclusion' },
+  { key: 'title', label: 'Title', schemaPath: 'title', required: true, comment: 'Main heading shown in case study details. use image1, image2, etc.' },
+  { key: 'abstract', label: 'Abstract', schemaPath: 'abstract', comment: 'Short summary of the full case study. use image1, image2, etc.' },
+  { key: 'introduction', label: 'Introduction', schemaPath: 'introduction', comment: 'Context, objective and background of the study.' },
+  { key: 'keywords', label: 'Keywords', schemaPath: 'keywords', comment: 'Add searchable terms related to this case study.' },
+  { key: 'reviewOfLiterature', label: 'Review of Literature', schemaPath: 'reviewOfLiterature', comment: 'Reference prior work and findings.' },
+  { key: 'researchGap', label: 'Research Gap', schemaPath: 'researchGap', comment: 'Describe what previous work has not addressed.' },
+  { key: 'researchObjectives', label: 'Research Objectives', schemaPath: 'researchObjectives', comment: 'List the measurable objectives of the study.' },
+  { key: 'researchQuestions', label: 'Research Questions', schemaPath: 'researchQuestions', comment: 'Add the key questions explored in this case.' },
+  { key: 'researchHypothesis', label: 'Research Hypothesis', schemaPath: 'researchHypothesis', comment: 'State the hypothesis being tested.' },
+  { key: 'caseDescription', label: 'Case Description', schemaPath: 'caseDescription', comment: 'Describe patient/case profile and condition.' },
+  { key: 'methodologyContent', label: 'Methodology', schemaPath: 'methodology.content', comment: 'Explain methods, process, and protocol.' },
+  { key: 'observationContent', label: 'Observation', schemaPath: 'observation.content', comment: 'Capture observations recorded during the study.' },
+  { key: 'dataAnalysisContent', label: 'Data Analysis', schemaPath: 'dataAnalysis.content', comment: 'Interpret trends, patterns, and findings.' },
+  { key: 'resultContent', label: 'Result', schemaPath: 'result.content', comment: 'You can type image1, image2, etc. to show uploaded result images inline.' },
+  { key: 'ethicalConsideration', label: 'Ethical Consideration', schemaPath: 'ethicalConsideration', comment: 'Document ethical safeguards and compliance.' },
+  { key: 'discussion', label: 'Discussion', schemaPath: 'discussion', comment: 'Discuss implications and meaning of the findings.' },
+  { key: 'expectedOutcomes', label: 'Expected Outcomes', schemaPath: 'expectedOutcomes', comment: 'State expected impact and practical outcomes.' },
+  { key: 'scientificSignificance', label: 'Scientific Significance', schemaPath: 'scientificSignificance', comment: 'Explain scientific novelty and contribution.' },
+  { key: 'limitation', label: 'Limitation', schemaPath: 'limitation', comment: 'Mention study boundaries and known constraints.' },
+  { key: 'placeOfResearch', label: 'Place of Research', schemaPath: 'placeOfResearch', comment: 'Specify where the research/case was conducted.' },
+  { key: 'conclusion', label: 'Conclusion', schemaPath: 'conclusion', comment: 'Final summary and overall takeaway.' },
 ]
 
 const structuredArrayFields = [
@@ -476,6 +476,7 @@ const CaseStudyFormPanel = ({
             <div key={field.key} className={`field-block ${field.key === 'title' ? 'full' : ''}`}>
               <span className="field-title">{field.label}</span>
               <span className="field-schema">{field.schemaPath}</span>
+              {field.comment && <span className="field-comment">{field.comment}</span>}
               <ReactQuill
                 theme="snow"
                 value={editorData[field.key]}

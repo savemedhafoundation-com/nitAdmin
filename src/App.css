@@ -166,6 +166,10 @@
   gap: 28px;
 }
 
+.dashboard.dashboard-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .panel {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
@@ -414,6 +418,12 @@ label {
   color: var(--muted);
 }
 
+.field-comment {
+  font-size: 0.82rem;
+  color: #7a746a;
+  line-height: 1.4;
+}
+
 .ql-toolbar.ql-snow {
   border-radius: 12px 12px 0 0;
   border: 1px solid var(--panel-border);
@@ -438,6 +448,133 @@ label {
 
 .ql-toolbar.ql-snow .ql-picker-options {
   z-index: 30;
+}
+.ql-snow .ql-picker.ql-font {
+  width: 190px;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-options {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value]::before {
+  content: attr(data-value);
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Space Grotesk']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Space Grotesk']::before,
+.ql-editor [style*='font-family: Space Grotesk'] {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Fraunces']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Fraunces']::before,
+.ql-editor [style*='font-family: Fraunces'] {
+  font-family: 'Fraunces', serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Arial']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Arial']::before,
+.ql-editor [style*='font-family: Arial'] {
+  font-family: Arial, sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Calibri']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Calibri']::before,
+.ql-editor [style*='font-family: Calibri'] {
+  font-family: Calibri, Arial, sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Segoe UI']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Segoe UI']::before,
+.ql-editor [style*='font-family: Segoe UI'] {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Cambria']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Cambria']::before,
+.ql-editor [style*='font-family: Cambria'] {
+  font-family: Cambria, Georgia, serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Georgia']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Georgia']::before,
+.ql-editor [style*='font-family: Georgia'] {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Garamond']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Garamond']::before,
+.ql-editor [style*='font-family: Garamond'] {
+  font-family: Garamond, 'Times New Roman', serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Helvetica']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Helvetica']::before,
+.ql-editor [style*='font-family: Helvetica'] {
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Palatino Linotype']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Palatino Linotype']::before,
+.ql-editor [style*='font-family: Palatino Linotype'] {
+  font-family: 'Palatino Linotype', Palatino, serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Times New Roman']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Times New Roman']::before,
+.ql-editor [style*='font-family: Times New Roman'] {
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Trebuchet MS']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Trebuchet MS']::before,
+.ql-editor [style*='font-family: Trebuchet MS'] {
+  font-family: 'Trebuchet MS', Arial, sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Verdana']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Verdana']::before,
+.ql-editor [style*='font-family: Verdana'] {
+  font-family: Verdana, Geneva, sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Tahoma']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Tahoma']::before,
+.ql-editor [style*='font-family: Tahoma'] {
+  font-family: Tahoma, Geneva, sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Arial Black']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Arial Black']::before,
+.ql-editor [style*='font-family: Arial Black'] {
+  font-family: 'Arial Black', Gadget, sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Impact']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Impact']::before,
+.ql-editor [style*='font-family: Impact'] {
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Courier New']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Courier New']::before,
+.ql-editor [style*='font-family: Courier New'] {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Lucida Console']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Lucida Console']::before,
+.ql-editor [style*='font-family: Lucida Console'] {
+  font-family: 'Lucida Console', Monaco, monospace;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value='Comic Sans MS']::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value='Comic Sans MS']::before,
+.ql-editor [style*='font-family: Comic Sans MS'] {
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
 }
 
 .ql-container.ql-snow {
@@ -758,6 +895,48 @@ button.ghost {
 }
 
 .case-study-dialog-body .case-study-panel {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.blog-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 18, 0.45);
+  display: flex;
+}
+
+.blog-dialog {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(180deg, #f8f4ec 0%, #f3ede0 100%);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.blog-dialog-header {
+  padding: 18px 26px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.blog-dialog-header h2 {
+  margin: 0;
+  font-family: 'Fraunces', serif;
+}
+
+.blog-dialog-body {
+  overflow-y: auto;
+  padding: 22px;
+}
+
+.blog-dialog-body .form-panel {
   width: 100%;
   max-width: none;
   margin: 0;

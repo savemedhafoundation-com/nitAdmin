@@ -11,8 +11,8 @@ import CaseStudyFormPanel from './components/CaseStudyFormPanel'
 import CaseStudyLibraryPanel from './components/CaseStudyLibraryPanel'
 import AdminSidebar from './components/AdminSidebar'
 
-// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nitbackend.vercel.app/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nitbackend.vercel.app/api'
 const api = axios.create({ baseURL: API_BASE })
 
 const isEmptyHtml = value => {
@@ -44,6 +44,7 @@ const getViewFromHash = () => {
 
 function App() {
   const [activeView, setActiveView] = useState(getViewFromHash)
+  const [isBlogDialogOpen, setIsBlogDialogOpen] = useState(false)
   const [isCaseStudyDialogOpen, setIsCaseStudyDialogOpen] = useState(false)
   const [caseStudies, setCaseStudies] = useState([])
   const [caseStudiesLoading, setCaseStudiesLoading] = useState(false)
@@ -119,7 +120,7 @@ function App() {
         : `${API_BASE}/blogs?limit=50`
       const { data: payload } = await api.get(url.replace(API_BASE, ''))
       setBlogs(normalizeBlogList(payload))
-    } catch (error) {
+    } catch {
       setStatus({ type: 'error', message: 'Unable to load blogs right now.' })
     } finally {
       setLoading(false)
@@ -163,6 +164,30 @@ function App() {
   }, [isCaseStudyDialogOpen, activeView])
 
   useEffect(() => {
+    if (!isBlogDialogOpen || activeView !== 'blogs') return undefined
+
+    const handleKeyDown = event => {
+      if (event.key === 'Escape') {
+        setIsBlogDialogOpen(false)
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isBlogDialogOpen, activeView])
+
+  useEffect(() => {
+    if (activeView !== 'blogs' && isBlogDialogOpen) {
+      setIsBlogDialogOpen(false)
+    }
+  }, [activeView, isBlogDialogOpen])
+
+  useEffect(() => {
     if (activeView !== 'case-studies' && isCaseStudyDialogOpen) {
       setIsCaseStudyDialogOpen(false)
     }
@@ -184,7 +209,7 @@ function App() {
     try {
       const { data: payload } = await api.get('/blogs/categories')
       setCategories(normalizeCategoryList(payload))
-    } catch (error) {
+    } catch {
       setStatus({ type: 'error', message: 'Unable to load categories right now.' })
     }
   }
@@ -271,6 +296,8 @@ function App() {
     setFiles({ image: null, adminPhoto: null, blogImage: [] })
     setSelectedCategoryId('')
     setSelectedSubcategoryId('')
+    setStatus({ type: '', message: '' })
+    setIsBlogDialogOpen(true)
   }
 
   const handleSubmit = async event => {
@@ -338,7 +365,7 @@ function App() {
         files.blogImage.forEach(file => formData.append('blogImage', file))
       }
 
-      const { data: payload } = await api.request({
+      await api.request({
         url: `/blogs${selectedId ? `/${selectedId}` : ''}`,
         method: selectedId ? 'PUT' : 'POST',
         data: formData,
@@ -347,6 +374,7 @@ function App() {
 
       setStatus({ type: 'success', message: selectedId ? 'Blog updated.' : 'Blog created.' })
       resetForm()
+      setIsBlogDialogOpen(false)
       await loadBlogs(searchQuery)
     } catch (error) {
       setStatus({ type: 'error', message: error.response?.data?.message || error.message })
@@ -390,7 +418,7 @@ function App() {
     try {
       const { data: payload } = await api.post(`/blogs/${blogId}/like`)
       updateBlogCounts(blogId, { likesCount: payload.likesCount })
-    } catch (error) {
+    } catch {
       setStatus({ type: 'error', message: 'Unable to update likes right now.' })
     }
   }
@@ -399,7 +427,7 @@ function App() {
     try {
       const { data: payload } = await api.post(`/blogs/${blogId}/share`)
       updateBlogCounts(blogId, { sharesCount: payload.sharesCount })
-    } catch (error) {
+    } catch {
       setStatus({ type: 'error', message: 'Unable to update shares right now.' })
     }
   }
@@ -496,6 +524,17 @@ function App() {
     setSelectedCaseStudy(null)
   }
 
+  const openBlogDialog = () => {
+    resetForm()
+    setStatus({ type: '', message: '' })
+    setIsBlogDialogOpen(true)
+  }
+
+  const closeBlogDialog = () => {
+    setIsBlogDialogOpen(false)
+    resetForm()
+  }
+
   const handleEditCaseStudy = caseStudy => {
     setSelectedCaseStudy(caseStudy)
     setCaseStudyStatus({ type: '', message: '' })
@@ -539,9 +578,13 @@ function App() {
       <main className="app">
         {activeView === 'blogs' && (
           <>
-            <BlogHeader totalBlogs={totalBlogs} isEditing={Boolean(selectedId)} />
+            <BlogHeader
+              totalBlogs={totalBlogs}
+              isEditing={Boolean(selectedId)}
+              onAddBlog={openBlogDialog}
+            />
 
-            <section className="dashboard">
+            <section className="dashboard dashboard-single">
               <BlogLibraryPanel
                 loading={loading}
                 blogs={pagedBlogs}
@@ -555,37 +598,6 @@ function App() {
                 onPageChange={setCurrentPage}
                 onLikeBlog={handleLike}
                 onShareBlog={handleShare}
-              />
-              <BlogEditorPanel
-                selectedId={selectedId}
-                onReset={resetForm}
-                onSubmit={handleSubmit}
-                isSaving={isSaving}
-                form={form}
-                onInputChange={handleInputChange}
-                onSpotlightChange={event =>
-                  setForm(prev => ({ ...prev, spotlight: event.target.checked }))
-                }
-                onDescriptionChange={value => setForm(prev => ({ ...prev, description: value }))}
-                categories={categories}
-                selectedCategoryId={selectedCategoryId}
-                subcategories={subcategories}
-                selectedSubcategoryId={selectedSubcategoryId}
-                onCategorySelect={handleCategorySelect}
-                onSubcategorySelect={handleSubcategorySelect}
-                newCategoryName={newCategoryName}
-                onNewCategoryNameChange={setNewCategoryName}
-                onAddCategory={handleAddCategory}
-                newSubcategoryName={newSubcategoryName}
-                onNewSubcategoryNameChange={setNewSubcategoryName}
-                onAddSubcategory={handleAddSubcategory}
-                onFileChange={handleFileChange}
-                faqs={faqs}
-                onFaqChange={handleFaqChange}
-                onAddFaq={addFaq}
-                onRemoveFaq={removeFaq}
-                status={status}
-                loading={loading}
               />
             </section>
           </>
@@ -645,6 +657,62 @@ function App() {
                 initialData={selectedCaseStudy}
                 onSuccess={handleCaseStudySaveSuccess}
                 onCancel={closeCaseStudyDialog}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeView === 'blogs' && isBlogDialogOpen && (
+        <div
+          className="blog-dialog-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label={selectedId ? 'Edit Blog' : 'Add Blog'}
+          onClick={event => {
+            if (event.target === event.currentTarget) {
+              closeBlogDialog()
+            }
+          }}
+        >
+          <div className="blog-dialog">
+            <div className="blog-dialog-header">
+              <h2>{selectedId ? 'Edit Blog' : 'Add Blog'}</h2>
+              <button type="button" className="ghost" title="Close" onClick={closeBlogDialog}>
+                Close
+              </button>
+            </div>
+            <div className="blog-dialog-body">
+              <BlogEditorPanel
+                selectedId={selectedId}
+                onReset={resetForm}
+                onSubmit={handleSubmit}
+                isSaving={isSaving}
+                form={form}
+                onInputChange={handleInputChange}
+                onSpotlightChange={event =>
+                  setForm(prev => ({ ...prev, spotlight: event.target.checked }))
+                }
+                onDescriptionChange={value => setForm(prev => ({ ...prev, description: value }))}
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                subcategories={subcategories}
+                selectedSubcategoryId={selectedSubcategoryId}
+                onCategorySelect={handleCategorySelect}
+                onSubcategorySelect={handleSubcategorySelect}
+                newCategoryName={newCategoryName}
+                onNewCategoryNameChange={setNewCategoryName}
+                onAddCategory={handleAddCategory}
+                newSubcategoryName={newSubcategoryName}
+                onNewSubcategoryNameChange={setNewSubcategoryName}
+                onAddSubcategory={handleAddSubcategory}
+                onFileChange={handleFileChange}
+                faqs={faqs}
+                onFaqChange={handleFaqChange}
+                onAddFaq={addFaq}
+                onRemoveFaq={removeFaq}
+                status={status}
+                loading={loading}
               />
             </div>
           </div>

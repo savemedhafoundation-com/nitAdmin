@@ -1,5 +1,5 @@
 import nitlogo from "../assets/NIT LOGO_1.png"
-const BlogHeader = ({ totalBlogs, isEditing }) => {
+const BlogHeader = ({ totalBlogs, isEditing, onAddBlog }) => {
 
   return (
     <header className="header">
@@ -18,6 +18,9 @@ const BlogHeader = ({ totalBlogs, isEditing }) => {
           <span>Active mode</span>
           <strong>{isEditing ? 'Editing' : 'Creating'}</strong>
         </div>
+        <button type="button" onClick={onAddBlog}>
+          Add Blog
+        </button>
       </div>
     </header>
   )

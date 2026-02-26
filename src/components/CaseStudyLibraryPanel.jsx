@@ -1,13 +1,22 @@
 const stripHtml = value => {
   if (!value) return ''
-  return String(value).replace(/<(.|\n)*?>/g, '').trim()
+  return String(value)
+    .replace(/<(.|\n)*?>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
-const buildExcerpt = (value, maxLength = 180) => {
+const buildExcerpt = (value, maxLength = 160) => {
   const text = stripHtml(value)
   if (!text) return ''
   if (text.length <= maxLength) return text
-  return `${text.slice(0, maxLength).trim()}...`
+  return `${text.slice(0, maxLength).trimEnd()}...`
 }
 
 const formatDate = value => {
@@ -32,7 +41,7 @@ const CaseStudyLibraryPanel = ({ loading, caseStudies, onEdit, onDelete }) => {
           <article className="case-study-card" key={item._id}>
             <div className="case-study-main">
               <div className="case-study-text">
-                <h3>{item.title || 'Untitled case study'}</h3>
+                <h3>{buildExcerpt(item.title, 90) || 'Untitled case study'}</h3>
                 <p>{buildExcerpt(item.abstract || item.introduction || item.discussion)}</p>
                 <div className="case-study-meta">
                   <span>Status: {item.status || 'draft'}</span>
