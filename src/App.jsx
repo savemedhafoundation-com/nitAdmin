@@ -11,8 +11,8 @@ import CaseStudyFormPanel from './components/CaseStudyFormPanel'
 import CaseStudyLibraryPanel from './components/CaseStudyLibraryPanel'
 import AdminSidebar from './components/AdminSidebar'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
-// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nitbackend.vercel.app/api'
+// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nitbackend.vercel.app/api'
 const api = axios.create({ baseURL: API_BASE })
 
 const isEmptyHtml = value => {
