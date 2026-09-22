@@ -1,4 +1,4 @@
-import nitlogo from '../assets/NIT LOGO_1.png'
+import nitlogo from '../assets/NIT LOGO_1.webp'
 
 const navItems = [
   {
@@ -10,6 +10,11 @@ const navItems = [
     id: 'case-studies',
     label: 'Case Studies',
     description: 'Create research case study forms',
+  },
+  {
+    id: 'ebooks',
+    label: 'Ebooks',
+    description: 'Upload, manage, and publish your library',
   },
 ]
 
@@ -28,6 +33,7 @@ const AdminSidebar = ({ activeView, onNavigate }) => {
             type="button"
             title={item.label}
             className={`side-nav-item ${activeView === item.id ? 'active' : ''}`}
+            aria-current={activeView === item.id ? 'page' : undefined}
             onClick={() => onNavigate(item.id)}
           >
             <strong>{item.label}</strong>

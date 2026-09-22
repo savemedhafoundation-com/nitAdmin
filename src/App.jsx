@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import 'react-quill-new/dist/quill.snow.css'
 import 'quill-table-up/index.css'
@@ -10,6 +10,8 @@ import BlogLibraryPanel from './components/BlogLibraryPanel'
 import CaseStudyFormPanel from './components/CaseStudyFormPanel'
 import CaseStudyLibraryPanel from './components/CaseStudyLibraryPanel'
 import AdminSidebar from './components/AdminSidebar'
+
+const EbookAdmin = lazy(() => import('./features/ebooks/EbookAdmin'))
 
 // const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://nitbackend.vercel.app/api'
@@ -39,7 +41,7 @@ const emptyForm = {
 const getViewFromHash = () => {
   if (typeof window === 'undefined') return 'blogs'
   const hash = window.location.hash.replace('#', '').trim().toLowerCase()
-  return hash === 'case-studies' ? 'case-studies' : 'blogs'
+  return ['case-studies', 'ebooks'].includes(hash) ? hash : 'blogs'
 }
 
 function App() {
@@ -505,9 +507,9 @@ function App() {
   }
 
   const handleNavigate = view => {
-    const nextView = view === 'case-studies' ? 'case-studies' : 'blogs'
+    const nextView = ['case-studies', 'ebooks'].includes(view) ? view : 'blogs'
     setActiveView(nextView)
-    const nextHash = nextView === 'case-studies' ? '#case-studies' : '#blogs'
+    const nextHash = `#${nextView}`
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash
     }
@@ -576,6 +578,11 @@ function App() {
       <AdminSidebar activeView={activeView} onNavigate={handleNavigate} />
 
       <main className="app">
+        {activeView === 'ebooks' && (
+          <Suspense fallback={<p className="hint" role="status">Loading ebook workspace…</p>}>
+            <EbookAdmin api={api} />
+          </Suspense>
+        )}
         {activeView === 'blogs' && (
           <>
             <BlogHeader

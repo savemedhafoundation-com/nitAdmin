@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Local environment values must never enter the client repository.
+.env
+.env.*
+!.env.example
+coverage
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +28,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*

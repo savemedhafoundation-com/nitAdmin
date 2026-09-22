@@ -1,4 +1,4 @@
-import nitlogo from "../assets/NIT LOGO_1.png"
+import nitlogo from "../assets/NIT LOGO_1.webp"
 const BlogHeader = ({ totalBlogs, isEditing, onAddBlog }) => {
 
   return (
